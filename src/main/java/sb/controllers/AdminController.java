@@ -2,8 +2,8 @@ package sb.controllers;
 
 import sb.services.EmbeddedLdap;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.ui.Model;
@@ -48,8 +48,6 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.StringReader;
 import org.xml.sax.InputSource;
 
-import java.util.HashMap;
-import java.util.Map;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.interfaces.Claim;
@@ -59,7 +57,6 @@ import com.auth0.jwt.exceptions.*;
 import java.io.UnsupportedEncodingException;
 
 import java.util.regex.Pattern;
-import java.util.Date;
 
 
 @Controller
@@ -187,22 +184,34 @@ public class AdminController {
 
       if (file.isEmpty())
          msg = "Fichier vide !";
-      else
-      {
-         String fname = file.getOriginalFilename();
-         String path = req.getSession().getServletContext().getRealPath("/img/products")
-            + File.separator + fname;
+      else {
 
-         File dest = new File(path);
-         try {
-            file.transferTo(dest);
-            msg = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + "/img/products/" + fname;
-         } catch (Exception e) {
-            log.info("Erreur : " + e.getMessage());
-            msg = "Erreur : " + e.getMessage();
+         String fname = file.getOriginalFilename();
+         if (!fname.contains(".")){
+            throw new IllegalArgumentException("Bad filename");}
+         String[] parts = fname.toLowerCase().split(Pattern.quote("."));
+         String ext = parts[parts.length - 1];
+         String[] authorized_exts = { "jpg", "gif", "png" };
+         if (!Arrays.asList(authorized_exts).contains(ext))
+         { throw new IllegalArgumentException("Bad file extension");}
+
+
+            String path = req.getSession().getServletContext().getRealPath("/img/products")
+                    + File.separator + fname;
+
+            File dest = new File(path);
+            try {
+               file.transferTo(dest);
+               msg = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + "/img/products/" + fname;
+            } catch (Exception e) {
+               log.info("Erreur : " + e.getMessage());
+               msg = "Erreur : " + e.getMessage();
+            }
          }
-      }
+
       json.put("msg", msg);
+
+
       return json.toString();
    }
 
